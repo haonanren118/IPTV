@@ -106,8 +106,17 @@ export async function onRequest(context) {
         if (expectedToken) {
           const authHeader = request.headers.get("Authorization") || "";
           const token = authHeader.replace("Bearer ", "").trim();
+          // 调试：返回对比信息（确认后删除此段）
           if (!token || token !== expectedToken) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            return new Response(JSON.stringify({
+              error: "Unauthorized",
+              _debug: {
+                got_token: token,
+                expected_prefix: expectedToken.substring(0, 6),
+                got_prefix: token ? token.substring(0, 6) : "(empty)",
+                lengths: { got: token ? token.length : 0, expected: expectedToken.length }
+              }
+            }), {
               status: 401,
               headers: { "Content-Type": "application/json", ...corsHeaders },
             });
