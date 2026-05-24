@@ -20,6 +20,8 @@ services:
     volumes:
       # 将 ZB.txt 挂载到容器内，方便更新
       - ./ZB.txt:/app/ZB.txt:ro
+      # 上传脚本（挂载后修改代码无需重建镜像）
+      - ./upload_and_deploy.py:/app/upload_and_deploy.py:ro
       # 自定义源持久化
       - ./custom_sources.json:/app/custom_sources.json
       # 日志持久化
