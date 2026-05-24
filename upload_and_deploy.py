@@ -201,6 +201,7 @@ def main():
             "m3u8": m3u8_content,
             "txt": txt_content,
             "last_update": update_time,
+            "source": "local",  # 标识为本地 IPTV 源，写入 CF KV 的 m3u8_local/txt_local
         }
         headers = {"Content-Type": "application/json"}
         if UPLOAD_TOKEN:
