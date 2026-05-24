@@ -132,7 +132,7 @@ export async function onRequest(context) {
       });
     }
 
-    // 合并播放列表（公网 + 本地 IPTV）
+    // 合并播放列表 M3U8（公网 + 本地 IPTV）
     if (path === "/all/m3u8" || path === "/merged.m3u8") {
       const publicM3u8 = KV ? await KV.get("m3u8") : null;
       const localM3u8 = KV ? await KV.get("m3u8_local") : null;
@@ -148,6 +148,26 @@ export async function onRequest(context) {
       return new Response(merged, {
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl; charset=utf-8",
+          "Cache-Control": `public, max-age=${CACHE_TTL}`,
+          ...corsHeaders,
+        },
+      });
+    }
+
+    // 合并播放列表 TXT（公网 + 本地 IPTV）
+    if (path === "/all/txt" || path === "/merged.txt") {
+      const publicTxt = KV ? await KV.get("txt") : null;
+      const localTxt = KV ? await KV.get("txt_local") : null;
+      let merged = "";
+      if (publicTxt) {
+        merged += "# ====== 公网源（GitHub Actions 自动扫描测速） ======\n" + publicTxt + "\n\n";
+      }
+      if (localTxt) {
+        merged += "# ====== 四川电信 IPTV（本地源） ======\n" + localTxt + "\n";
+      }
+      return new Response(merged, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
           "Cache-Control": `public, max-age=${CACHE_TTL}`,
           ...corsHeaders,
         },
