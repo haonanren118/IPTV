@@ -16,7 +16,7 @@ UPLOAD_URL = os.environ.get("UPLOAD_URL", "https://iptv-bfo.pages.dev/api/upload
 ZB_FILE = os.environ.get("ZB_FILE", "/app/ZB.txt")
 EPG_URL = os.environ.get("EPG_URL", "https://epg.112114.xyz/pp.xml")
 LOGO_BASE_URL = "https://ghfast.top/https://raw.githubusercontent.com/Jarrey/iptv_logo/main/tv/"
-UPLOAD_TOKEN = os.environ.get("UPLOAD_TOKEN", "")  # CF Pages 上传认证 Token
+UPLOAD_TOKEN = os.environ.get("CF_KV_TOKEN", "") or os.environ.get("UPLOAD_TOKEN", "")  # 优先读 CF_KV_TOKEN（docker-compose 统一配置）
 
 # 分组定义（按显示顺序）
 GROUP_ORDER = [
