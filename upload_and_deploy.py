@@ -195,6 +195,11 @@ def main():
     log(f"M3U8: {len(m3u8_lines)} 行, TXT: {len(txt_lines)} 行")
 
     # 4. 上传到 CF KV
+    # DEBUG: 打印 Token 状态（脱敏）
+    if UPLOAD_TOKEN:
+        log(f"Token 已读取: {UPLOAD_TOKEN[:4]}...{UPLOAD_TOKEN[-4:]} (长度:{len(UPLOAD_TOKEN)})")
+    else:
+        log("⚠️ Token 为空! 未读取到 CF_KV_TOKEN 或 UPLOAD_TOKEN 环境变量")
     log(f"上传到 CF KV ({UPLOAD_URL})...")
     try:
         payload = {
