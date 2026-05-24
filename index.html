@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV 源管理器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .status {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-label {
+            color: #666;
+        }
+        .status-value {
+            color: #333;
+            font-weight: 600;
+        }
+        .status-value.running {
+            color: #22c55e;
+        }
+        .endpoints {
+            margin-bottom: 30px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .endpoint-info {
+            flex: 1;
+        }
+        .endpoint-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .endpoint-url {
+            color: #666;
+            font-size: 0.9em;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+        .copy-btn:hover {
+            background: #5a67d8;
+        }
+        .copy-btn.copied {
+            background: #22c55e;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .footer {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📺 IPTV 源管理器</h1>
+        <p class="subtitle">Cloudflare Pages 部署版本</p>
+        
+        <div class="status" id="status">
+            <div class="status-item">
+                <span class="status-label">服务状态</span>
+                <span class="status-value" id="service-status"><span class="loading"></span> 检测中...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">平台</span>
+                <span class="status-value">Cloudflare Pages</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">最后更新</span>
+                <span class="status-value" id="last-update">-</span>
+            </div>
+        </div>
+
+        <div class="endpoints">
+            <div class="endpoint">
+                <div class="endpoint-info">
+                    <div class="endpoint-name">M3U8 播放列表</div>
+                    <div class="endpoint-url" id="m3u8-url">/api/iptv</div>
+                </div>
+                <button class="copy-btn" onclick="copyToClipboard('m3u8')">复制</button>
+            </div>
+            <div class="endpoint">
+                <div class="endpoint-info">
+                    <div class="endpoint-name">TXT 播放列表</div>
+                    <div class="endpoint-url" id="txt-url">/api/txt</div>
+                </div>
+                <button class="copy-btn" onclick="copyToClipboard('txt')">复制</button>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="forceUpdate()">🔄 强制更新</button>
+            <a href="https://github.com/haonanren118/IPTV" class="btn btn-secondary" target="_blank">📖 文档</a>
+        </div>
+
+        <div class="footer">
+            <p>开源项目：<a href="https://github.com/haonanren118/IPTV" target="_blank">GitHub</a> | <a href="https://gitee.com/yygitee118/IPTV" target="_blank">Gitee</a></p>
+            <p style="margin-top: 10px;">交流 QQ 群：708144970</p>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        
+        // 设置完整 URL
+        document.getElementById('m3u8-url').textContent = `${baseUrl}/api/iptv`;
+        document.getElementById('txt-url').textContent = `${baseUrl}/api/txt`;
+
+        // 获取状态
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('service-status');
+                statusEl.innerHTML = '<span class="running">●</span> 运行中';
+                
+                const updateEl = document.getElementById('last-update');
+                updateEl.textContent = data.last_update || '未知';
+            } catch (error) {
+                document.getElementById('service-status').textContent = '❌ 异常';
+                document.getElementById('last-update').textContent = '-';
+            }
+        }
+
+        // 复制到剪贴板
+        async function copyToClipboard(type) {
+            const url = type === 'm3u8' 
+                ? `${baseUrl}/api/iptv`
+                : `${baseUrl}/api/txt`;
+            
+            const btn = event.target;
+            
+            try {
+                await navigator.clipboard.writeText(url);
+                showCopied(btn);
+            } catch (err) {
+                // 降级方案
+                const input = document.createElement('input');
+                input.value = url;
+                input.style.position = 'fixed';
+                input.style.opacity = '0';
+                document.body.appendChild(input);
+                input.select();
+                const success = document.execCommand('copy');
+                document.body.removeChild(input);
+                
+                if (success) {
+                    showCopied(btn);
+                } else {
+                    btn.textContent = '复制失败';
+                    setTimeout(() => {
+                        btn.textContent = '复制';
+                    }, 2000);
+                }
+            }
+        }
+        
+        function showCopied(btn) {
+            btn.textContent = '已复制';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = '复制';
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        // 强制更新
+        async function forceUpdate() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🔄 更新中...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/forceRetest');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    btn.textContent = '✅ 更新成功';
+                    setTimeout(() => {
+                        fetchStatus();
+                    }, 1000);
+                } else {
+                    btn.textContent = '❌ 更新失败';
+                }
+            } catch (error) {
+                btn.textContent = '❌ 请求失败';
+            }
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 3000);
+        }
+
+        // 页面加载时获取状态
+        fetchStatus();
+        
+        // 每 30 秒刷新状态
+        setInterval(fetchStatus, 30000);
+    </script>
+</body>
+</html>
