@@ -4,9 +4,7 @@ services:
     container_name: iptv-updater
     restart: always
     ports:
-      # 公网源扫描+测速 (app.py)
-      - "5000:5000"
-      # Web管理界面 + 本地源上传 (web_admin.py)
+      # Web管理界面 (web_admin.py)
       - "9998:9998"
     environment:
       - TZ=Asia/Shanghai
