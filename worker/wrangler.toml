@@ -15,4 +15,4 @@ crons = ["0 */6 * * *"]
 
 # Cloudflare Pages 环境变量（在 Dashboard 中设置，非此处）
 # Settings → Functions → Environment variables:
-#   UPLOAD_TOKEN = your-upload-token-here  （与 docker-compose.yml 一致）
+#   API_KEY = your-api-key-here  （与 docker-compose.yml 一致）

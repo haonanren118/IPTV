@@ -192,7 +192,7 @@ export async function onRequest(context) {
         }
 
         // Token 认证：防止未授权写入
-        const expectedToken = env.UPLOAD_TOKEN || "";
+        const expectedToken = env.API_KEY || "";
         if (expectedToken) {
           const authHeader = request.headers.get("Authorization") || "";
           const token = authHeader.replace("Bearer ", "").trim();
