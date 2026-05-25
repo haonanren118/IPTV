@@ -11,7 +11,7 @@ echo "=========================================="
 
 # 启动本地源上传循环（upload_and_deploy.py）
 echo "[1/2] 启动本地源上传服务 (upload_and_deploy.py) ..."
-python /app/upload_and_deploy.py &
+python3 /app/upload_and_deploy.py &
 UPLOAD_PID=$!
 echo "  → upload_and_deploy.py PID: $UPLOAD_PID"
 
@@ -24,7 +24,7 @@ echo "   • Web管理界面:   http://0.0.0.0:9998"
 echo ""
 
 # 前台运行 web_admin.py（容器主进程）
-exec python /app/web_admin.py
+exec python3 /app/web_admin.py
 
 # 清理子进程
 echo "收到退出信号，清理子进程..."
