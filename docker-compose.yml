@@ -8,7 +8,7 @@ services:
       - "9998:9998"
     environment:
       - TZ=Asia/Shanghai
-      - CF_KV_TOKEN=75yITZFqUzs8XPEDhnrlWdpY
+      - CF_KV_TOKEN=iptv-default-key-2024
       - CF_UPLOAD_URL=https://iptv-bfo.pages.dev/api/upload
     volumes:
       - ./ZB.txt:/app/ZB.txt:ro
