@@ -20,7 +20,7 @@ COPY ZB.txt /app/ZB.txt
 COPY entrypoint.sh /app/entrypoint.sh
 
 # 创建日志目录
-RUN mkdir -p /app/logs && chmod +x /app/entrypoint.sh
+RUN mkdir -p /app/logs && chmod +x /app/entrypoint.sh && ln -sf /usr/local/bin/python3 /usr/local/bin/python
 
 # 暴露端口：9998(Web管理界面)
 EXPOSE 9998
