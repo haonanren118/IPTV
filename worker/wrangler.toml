@@ -1,0 +1,14 @@
+name = "iptv-manager"
+main = "src/worker.js"
+compatibility_date = "2024-12-01"
+
+# KV 命名空间（部署前需先创建）
+# wrangler kv:namespace create "IPTV_CACHE"
+# 然后将返回的 id 填入下方
+# [[kv_namespaces]]
+# binding = "IPTV_CACHE"
+# id = "你的KV命名空间ID"
+
+# Cron Trigger：每6小时自动更新
+[triggers]
+crons = ["0 */6 * * *"]

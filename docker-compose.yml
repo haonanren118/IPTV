@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  iptv-updater:
+    build: .
+    container_name: iptv-updater
+    restart: unless-stopped
+    ports:
+      # Web 管理界面
+      - "9998:9998"
+    environment:
+      # CF Pages 上传地址
+      - UPLOAD_URL=https://iptv-bfo.pages.dev/api/upload
+      # API Key（用于上传验证）
+      - API_KEY=iptv-default-key-2024
+      # ZB.txt 文件路径（容器内）
+      - ZB_FILE=/app/ZB.txt
+    volumes:
+      # 将 ZB.txt 挂载到容器内，方便更新
+      - ./ZB.txt:/app/ZB.txt:ro
+      # 自定义源持久化
+      - ./custom_sources.json:/app/custom_sources.json
+      # 日志持久化
+      - ./logs:/app/logs

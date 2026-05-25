@@ -1,0 +1,14 @@
+{
+  "name": "iptv-manager-worker",
+  "version": "1.0.0",
+  "description": "IPTV 源管理器 - Cloudflare Worker 版本",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0"
+  }
+}
