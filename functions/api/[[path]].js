@@ -192,16 +192,29 @@ export async function onRequest(context) {
         }
 
         // Token 认证：防止未授权写入
-        const expectedToken = env.API_KEY || "";
+        // 支持多种环境变量名（兼容性考虑）
+        const expectedToken = env.API_KEY || env.UPLOAD_TOKEN || "";
+        console.log("API_KEY check:", {
+          api_key_exists: !!env.API_KEY,
+          upload_token_exists: !!env.UPLOAD_TOKEN,
+          expected_token_length: expectedToken.length,
+          has_auth: !!request.headers.get("Authorization")
+        });
         if (expectedToken) {
           const authHeader = request.headers.get("Authorization") || "";
           const token = authHeader.replace("Bearer ", "").trim();
           if (!token || token !== expectedToken) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            return new Response(JSON.stringify({ error: "Unauthorized", debug: "Token mismatch" }), {
               status: 401,
               headers: { "Content-Type": "application/json", ...corsHeaders },
             });
           }
+        } else {
+          // 如果没有配置 API_KEY，拒绝所有上传请求（安全默认）
+          return new Response(JSON.stringify({ error: "Unauthorized", debug: "API_KEY not configured" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
         }
         const now = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
         // 区分数据来源：公网源(GitHub Actions) vs 本地源(NAS)
