@@ -61,6 +61,10 @@ EPG_URL = "https://epg.zsdc.eu.org/t.xml"
 LOGO_BASE_URL = "https://ghfast.top/https://raw.githubusercontent.com/Jarrey/iptv_logo/main/tv/"
 APP_PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.pid")
 
+# CF KV 上传配置（用于公网源自动上传）
+CF_UPLOAD_URL = os.environ.get("CF_UPLOAD_URL", "https://iptv-bfo.pages.dev/api/upload")
+CF_KV_TOKEN = os.environ.get("CF_KV_TOKEN", "")
+
 
 def _read_pid_file():
     try:
@@ -710,6 +714,32 @@ def channel_sort_key(name):
         
     return (2, name)
 
+def upload_to_cf_kv(m3u8_content, txt_content, update_time):
+    """将公网源播放列表上传到 CF KV（source=public）"""
+    if not CF_KV_TOKEN:
+        print("⚠️ CF_KV_TOKEN 未配置，跳过上传到 CF KV")
+        return False
+    try:
+        payload = {
+            "m3u8": m3u8_content,
+            "txt": txt_content,
+            "last_update": update_time,
+            "source": "public",  # 标识为公网源，写入 CF KV 的 m3u8/txt
+        }
+        headers = {"Authorization": f"Bearer {CF_KV_TOKEN}"}
+        print(f"上传到 CF KV ({CF_UPLOAD_URL})...")
+        resp = requests.post(CF_UPLOAD_URL, json=payload, headers=headers, timeout=30)
+        if resp.status_code == 200:
+            print(f"✅ 公网源上传成功! 更新时间: {update_time}")
+            return True
+        else:
+            print(f"❌ 公网源上传失败: HTTP {resp.status_code} - {resp.text[:200]}")
+            return False
+    except Exception as e:
+        print(f"❌ 公网源上传异常: {e}")
+        return False
+
+
 def scheduled_task():
     global global_m3u8_content, global_txt_content, last_run_time, is_running
     if not scheduled_task_lock.acquire(blocking=False):
@@ -954,6 +984,10 @@ def scheduled_task():
             f.write(global_txt_content)
 
         print(f"M3U8 and TXT generation complete at {last_run_time}.")
+
+        # 上传公网源播放列表到 CF KV
+        upload_to_cf_kv(global_m3u8_content, global_txt_content, last_run_time)
+
         del results_with_speed, valid_results, final_sources, top_sources, all_entries, grouped_entries, unique_channel_names, txt_lines
         gc.collect()
     finally:

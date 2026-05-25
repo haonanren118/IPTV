@@ -13,10 +13,10 @@ from urllib.parse import quote
 
 # ==================== 配置 ====================
 UPLOAD_URL = os.environ.get("UPLOAD_URL", "https://iptv-bfo.pages.dev/api/upload")
-API_KEY = os.environ.get("API_KEY", "iptv-default-key-2024")
 ZB_FILE = os.environ.get("ZB_FILE", "/app/ZB.txt")
-EPG_URL = "https://epg.zsdc.eu.org/t.xml"
+EPG_URL = os.environ.get("EPG_URL", "https://epg.112114.xyz/pp.xml")
 LOGO_BASE_URL = "https://ghfast.top/https://raw.githubusercontent.com/Jarrey/iptv_logo/main/tv/"
+UPLOAD_TOKEN = os.environ.get("CF_KV_TOKEN", "") or os.environ.get("UPLOAD_TOKEN", "")  # 优先读 CF_KV_TOKEN（docker-compose 统一配置）
 
 # 分组定义（按显示顺序）
 GROUP_ORDER = [
@@ -195,15 +195,23 @@ def main():
     log(f"M3U8: {len(m3u8_lines)} 行, TXT: {len(txt_lines)} 行")
 
     # 4. 上传到 CF KV
+    # DEBUG: 打印 Token 状态（脱敏）
+    if UPLOAD_TOKEN:
+        log(f"Token 已读取: {UPLOAD_TOKEN[:4]}...{UPLOAD_TOKEN[-4:]} (长度:{len(UPLOAD_TOKEN)})")
+    else:
+        log("⚠️ Token 为空! 未读取到 CF_KV_TOKEN 或 UPLOAD_TOKEN 环境变量")
     log(f"上传到 CF KV ({UPLOAD_URL})...")
     try:
         payload = {
             "m3u8": m3u8_content,
             "txt": txt_content,
             "last_update": update_time,
+            "source": "local",  # 标识为本地 IPTV 源，写入 CF KV 的 m3u8_local/txt_local
         }
-        headers = {"X-API-Key": API_KEY}
-        resp = requests.post(UPLOAD_URL, json=payload, headers=headers, timeout=30)
+        headers = {"Content-Type": "application/json"}
+        if UPLOAD_TOKEN:
+            headers["Authorization"] = f"Bearer {UPLOAD_TOKEN}"
+        resp = requests.post(UPLOAD_URL, json=payload, headers=headers, timeout=120)
         if resp.status_code == 200:
             data = resp.json()
             log(f"✅ 上传成功! 更新时间: {data.get('last_update', update_time)}")
