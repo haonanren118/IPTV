@@ -205,7 +205,18 @@ export async function onRequest(context) {
           const authHeader = request.headers.get("Authorization") || "";
           const token = authHeader.replace("Bearer ", "").trim();
           if (!token || token !== expectedToken) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            // 调试信息：返回更多信息帮助诊断问题
+            return new Response(JSON.stringify({ 
+              error: "Unauthorized",
+              debug: {
+                token_received: token ? `${token.substring(0, 4)}...${token.substring(token.length-4)}` : "empty",
+                token_length: token.length,
+                expected_length: expectedToken.length,
+                using_default: !(env.API_KEY || env.UPLOAD_TOKEN),
+                api_key_set: !!env.API_KEY,
+                upload_token_set: !!env.UPLOAD_TOKEN
+              }
+            }), {
               status: 401,
               headers: { "Content-Type": "application/json", ...corsHeaders },
             });
