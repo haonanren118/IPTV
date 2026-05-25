@@ -10,6 +10,7 @@ import os
 import re
 import time
 import json
+import requests as http_requests
 from datetime import datetime
 from urllib.parse import quote
 import threading
@@ -21,6 +22,7 @@ ZB_FILE = os.environ.get("ZB_FILE", "/app/ZB.txt")
 CUSTOM_FILE = "/app/custom_sources.json"
 LOG_FILE = "/app/logs/cron.log"
 UPLOAD_URL = os.environ.get("UPLOAD_URL", "https://iptv-bfo.pages.dev/api/upload")
+CF_API_BASE = os.environ.get("CF_API_BASE", "https://iptv-bfo.pages.dev/api")
 
 # 分组定义
 GROUP_ORDER = [
@@ -99,11 +101,44 @@ def get_channel_group(name):
 
 
 def load_channels():
-    """加载所有频道（ZB.txt + 自定义源）"""
+    """加载频道列表：优先从 CF KV 读取远程源数据，失败时降级读 ZB.txt"""
     channels = {}
-    
-    # 加载 ZB.txt
+    data_source = "未知"
+
+    # 优先从 CF KV 读取已上传的播放列表（远程源抓取后上传的数据）
+    try:
+        resp = http_requests.get(f"{CF_API_BASE}/local/txt", timeout=10)
+        if resp.status_code == 200 and resp.text.strip():
+            text = resp.text.strip()
+            if not text.startswith("#") or len(text) > 50:
+                data_source = "远程源"
+                for line in text.split('\n'):
+                    line = line.strip()
+                    if not line or line.startswith('#') or ',#genre#' in line:
+                        continue
+                    if ',' not in line:
+                        continue
+                    parts = line.split(',', 2)
+                    name = parts[0].strip()
+                    url = parts[1].strip()
+                    group = parts[2].strip() if len(parts) >= 3 else get_channel_group(name)
+                    if not name or not url or not url.startswith("http"):
+                        continue
+                    if group not in channels:
+                        channels[group] = {}
+                    if name not in channels[group]:
+                        channels[group][name] = []
+                    if url not in [s["url"] for s in channels[group][name]]:
+                        channels[group][name].append({"url": url, "source": "远程源"})
+                if channels:
+                    print(f"[web_admin] 从 CF KV 加载了频道列表 (来源: {data_source})")
+                    return channels
+    except Exception as e:
+        print(f"[web_admin] 从 CF KV 读取失败: {e}")
+
+    # 降级：读取 ZB.txt
     if os.path.exists(ZB_FILE):
+        data_source = "ZB.txt"
         with open(ZB_FILE, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -121,10 +156,11 @@ def load_channels():
                     channels[group] = {}
                 if name not in channels[group]:
                     channels[group][name] = []
-                if url not in channels[group][name]:
+                if url not in [s["url"] for s in channels[group][name]]:
                     channels[group][name].append({"url": url, "source": "ZB.txt"})
-    
-    # 加载自定义源
+        print(f"[web_admin] 从 ZB.txt 加载了频道列表 (降级模式)")
+
+    # 加载自定义源（追加到列表）
     if os.path.exists(CUSTOM_FILE):
         try:
             with open(CUSTOM_FILE, "r", encoding="utf-8") as f:
@@ -141,7 +177,7 @@ def load_channels():
                     channels[group][name].append({"url": url, "source": "自定义"})
         except Exception as e:
             print(f"加载自定义源失败: {e}")
-    
+
     return channels
 
 
@@ -619,7 +655,7 @@ def api_update():
         # 导入并执行上传脚本
         import subprocess
         result = subprocess.run(
-            ["python", "/app/upload_and_deploy.py"],
+            ["python3", "/app/upload_and_deploy.py"],
             capture_output=True,
             text=True,
             timeout=60
