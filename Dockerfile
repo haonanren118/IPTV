@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY upload_and_deploy.py /app/upload_and_deploy.py
 COPY web_admin.py /app/web_admin.py
 COPY ZB.txt /app/ZB.txt
+COPY hsmd_address_list.txt /app/hsmd_address_list.txt
 COPY entrypoint.sh /app/entrypoint.sh
 
 # 创建日志目录
