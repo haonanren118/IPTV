@@ -183,15 +183,15 @@
         <div class="endpoints">
             <div class="endpoint">
                 <div class="endpoint-info">
-                    <div class="endpoint-name">📺 M3U8 播放列表（公网+本地合并）</div>
-                    <div class="endpoint-url" id="m3u8-url">/api/all/m3u8</div>
+                    <div class="endpoint-name">📺 M3U8 播放列表（NAS 远程源）</div>
+                    <div class="endpoint-url" id="m3u8-url">/api/local/m3u8</div>
                 </div>
                 <button class="copy-btn" onclick="copyToClipboard('m3u8')">复制</button>
             </div>
             <div class="endpoint">
                 <div class="endpoint-info">
-                    <div class="endpoint-name">📄 TXT 播放列表（公网+本地合并）</div>
-                    <div class="endpoint-url" id="txt-url">/api/all/txt</div>
+                    <div class="endpoint-name">📄 TXT 播放列表（NAS 远程源）</div>
+                    <div class="endpoint-url" id="txt-url">/api/local/txt</div>
                 </div>
                 <button class="copy-btn" onclick="copyToClipboard('txt')">复制</button>
             </div>
@@ -212,8 +212,8 @@
         const baseUrl = window.location.origin;
         
         // 设置完整 URL
-        document.getElementById('m3u8-url').textContent = `${baseUrl}/api/all/m3u8`;
-        document.getElementById('txt-url').textContent = `${baseUrl}/api/all/txt`;
+        document.getElementById('m3u8-url').textContent = `${baseUrl}/api/local/m3u8`;
+        document.getElementById('txt-url').textContent = `${baseUrl}/api/local/txt`;
 
         // 获取状态
         async function fetchStatus() {
@@ -235,8 +235,8 @@
         // 复制到剪贴板
         async function copyToClipboard(type) {
             const url = type === 'm3u8' 
-                ? `${baseUrl}/api/all/m3u8`
-                : `${baseUrl}/api/all/txt`;
+                ? `${baseUrl}/api/local/m3u8`
+                : `${baseUrl}/api/local/txt`;
             
             const btn = event.target;
             
