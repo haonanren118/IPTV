@@ -192,19 +192,20 @@ export async function onRequest(context) {
         }
 
         // Token 认证：防止未授权写入
-        // 支持多种环境变量名（兼容性考虑）
-        const expectedToken = env.API_KEY || env.UPLOAD_TOKEN || "";
+        // 支持多种环境变量名（兼容性考虑），使用默认密钥作为回退
+        const DEFAULT_API_KEY = "iptv-default-key-2024";
+        const expectedToken = env.API_KEY || env.UPLOAD_TOKEN || DEFAULT_API_KEY;
         console.log("API_KEY check:", {
-          api_key_exists: !!env.API_KEY,
-          upload_token_exists: !!env.UPLOAD_TOKEN,
-          expected_token_length: expectedToken.length,
-          has_auth: !!request.headers.get("Authorization")
+          api_key_from_env: env.API_KEY ? "set" : "not set",
+          upload_token_from_env: env.UPLOAD_TOKEN ? "set" : "not set",
+          using_default: !(env.API_KEY || env.UPLOAD_TOKEN),
+          expected_token_length: expectedToken.length
         });
         if (expectedToken) {
           const authHeader = request.headers.get("Authorization") || "";
           const token = authHeader.replace("Bearer ", "").trim();
           if (!token || token !== expectedToken) {
-            return new Response(JSON.stringify({ error: "Unauthorized", debug: "Token mismatch" }), {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
               status: 401,
               headers: { "Content-Type": "application/json", ...corsHeaders },
             });
