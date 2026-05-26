@@ -38,9 +38,19 @@ GROUP_ORDER = [
 ]
 
 
+LOG_FILE = "/app/logs/cron.log"
+
 def log(msg):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{ts}] {msg}")
+    line = f"[{ts}] {msg}"
+    print(line)
+    # 同时写入日志文件
+    try:
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
 
 
 # ==================== 远程源抓取逻辑（复用 app.py 核心） ====================
