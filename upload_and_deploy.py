@@ -521,12 +521,13 @@ def fetch_remote_sources():
         for entry in entries_list:
             m3u8_lines.append(entry['content'])
 
-    # 生成 TXT
+    # 生成 TXT（同一频道多个源都输出）
     txt_lines = []
     for name in unique_names:
         entries_list = sorted(grouped[name], key=lambda x: x.get('index', 999))
         group = entries_list[0]['group']
-        txt_lines.append(f"{name},{entries_list[0]['url']},{group}")
+        for entry in entries_list:
+            txt_lines.append(f"{name},{entry['url']},{group}")
 
     m3u8_content = "\n".join(m3u8_lines)
     txt_content = "\n".join(txt_lines)
