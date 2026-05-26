@@ -3,9 +3,11 @@
 
 import urllib.request
 import json
+import os
 
 API_URL = "https://iptv-bfo.pages.dev/api/upload"
-API_KEY = "iptv-default-key-2024"
+# 从环境变量读取 API_KEY，避免硬编码
+API_KEY = os.environ.get("API_KEY", "")
 
 def test_upload_without_token():
     """测试1: 不带Token访问上传端点（应该失败）"""
@@ -59,6 +61,10 @@ def test_upload_with_wrong_token():
 
 def test_upload_with_correct_token():
     """测试3: 带正确的Token访问（应该成功）"""
+    if not API_KEY:
+        print("\n❌ 测试3跳过: 未设置 API_KEY 环境变量")
+        return False
+    
     print("\n测试3: 带正确的Token访问上传端点...")
     req = urllib.request.Request(
         API_URL,
@@ -115,7 +121,10 @@ if __name__ == "__main__":
     print("API_KEY 认证测试")
     print("=" * 50)
     print(f"API URL: {API_URL}")
-    print(f"API KEY: {API_KEY[:4]}...{API_KEY[-4:]}")
+    if API_KEY:
+        print(f"API KEY: {API_KEY[:4]}...{API_KEY[-4:]}")
+    else:
+        print("API KEY: 未设置 (请设置 API_KEY 环境变量)")
     print("=" * 50)
 
     results = []
