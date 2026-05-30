@@ -18,7 +18,7 @@ UPLOAD_URL = os.environ.get("UPLOAD_URL", "https://iptv-bfo.pages.dev/api/upload
 ZB_FILE = os.environ.get("ZB_FILE", "/app/ZB.txt")
 EPG_URL = os.environ.get("EPG_URL", "https://epg.112114.xyz/pp.xml")
 LOGO_BASE_URL = "https://ghfast.top/https://raw.githubusercontent.com/Jarrey/iptv_logo/main/tv/"
-UPLOAD_TOKEN = os.environ.get("CF_KV_TOKEN", "iptv-default-key-2024") or os.environ.get("API_KEY", "iptv-default-key-2024")
+UPLOAD_TOKEN = os.environ.get("CF_KV_TOKEN", "cf-iptv-2025-x7m9k2p5q8r3t6v1") or os.environ.get("API_KEY", "cf-iptv-2025-x7m9k2p5q8r3t6v1")
 
 # 远程源配置
 API_URL = "https://iptvs.pes.im"
