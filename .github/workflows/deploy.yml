@@ -1,4 +1,4 @@
-name: 生成播放列表并部署
+name: 同步播放列表并部署
 
 on:
   push:
@@ -9,12 +9,12 @@ on:
       - '.gitignore'
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'  # 每6小时自动更新
+    - cron: '0 */6 * * *'  # 每6小时自动同步
 
 jobs:
-  generate-and-deploy:
+  sync-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     permissions:
       contents: read
       deployments: write
@@ -31,41 +31,10 @@ jobs:
     - name: 安装依赖
       run: pip install requests
 
-    - name: 生成播放列表
+    - name: 从 CF KV 同步播放列表
       env:
         GITHUB_OUTPUT_DIR: ${{ github.workspace }}
       run: python generate_playlist.py
-
-    - name: 上传播放列表到 Cloudflare KV
-      if: success()
-      run: |
-        M3U8_CONTENT=$(cat iptv_sources.m3u8)
-        TXT_CONTENT=$(cat iptv_sources.txt)
-        UPDATE_TIME=$(date '+%Y/%m/%d %H:%M:%S')
-
-        # 构建 JSON payload（使用临时文件避免 shell 转义问题）
-        python3 -c "
-        import json
-        with open('iptv_sources.m3u8', 'r') as f:
-            m3u8 = f.read()
-        with open('iptv_sources.txt', 'r') as f:
-            txt = f.read()
-        payload = {'m3u8': m3u8, 'txt': txt, 'last_update': '$UPDATE_TIME'}
-        with open('upload_payload.json', 'w') as f:
-            json.dump(payload, f)
-        "
-
-        echo "上传播放列表到 CF KV..."
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-          -X POST "https://iptv-bfo.pages.dev/api/upload" \
-          -H "Content-Type: application/json" \
-          -d @upload_payload.json)
-
-        if [ "$HTTP_CODE" = "200" ]; then
-          echo "✅ 上传成功 (HTTP $HTTP_CODE)"
-        else
-          echo "⚠️ 上传返回 HTTP $HTTP_CODE"
-        fi
 
     - name: 部署到 Cloudflare Pages
       uses: cloudflare/pages-action@v1
