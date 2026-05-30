@@ -225,7 +225,7 @@
                 statusEl.innerHTML = '<span class="running">●</span> 运行中';
                 
                 const updateEl = document.getElementById('last-update');
-                updateEl.textContent = data.last_update || '未知';
+                updateEl.textContent = data.local_last_update || data.last_update || '未知';
             } catch (error) {
                 document.getElementById('service-status').textContent = '❌ 异常';
                 document.getElementById('last-update').textContent = '-';

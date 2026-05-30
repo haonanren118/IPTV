@@ -1,20 +1,14 @@
-name: 同步播放列表并部署
+name: 部署到 Cloudflare Pages
 
 on:
   push:
     branches: [master, main]
-    paths-ignore:
-      - '*.md'
-      - 'LICENSE'
-      - '.gitignore'
   workflow_dispatch:
-  schedule:
-    - cron: '0 */6 * * *'  # 每6小时自动同步
 
 jobs:
-  sync-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     permissions:
       contents: read
       deployments: write
@@ -22,19 +16,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: 设置 Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: 安装依赖
-      run: pip install requests
-
-    - name: 从 CF KV 同步播放列表
-      env:
-        GITHUB_OUTPUT_DIR: ${{ github.workspace }}
-      run: python generate_playlist.py
 
     - name: 部署到 Cloudflare Pages
       uses: cloudflare/pages-action@v1
@@ -48,8 +29,4 @@ jobs:
     - name: 验证部署
       run: |
         echo "✅ 部署完成!"
-        echo ""
-        echo "🌐 访问地址:"
-        echo "  - 管理页面: https://iptv-bfo.pages.dev"
-        echo "  - M3U8 源: https://iptv-bfo.pages.dev/api/iptv"
-        echo "  - TXT 源: https://iptv-bfo.pages.dev/api/txt"
+        echo "🌐 https://iptv-bfo.pages.dev"
