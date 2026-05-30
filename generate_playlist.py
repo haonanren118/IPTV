@@ -30,7 +30,7 @@ def main():
     # 尝试获取 M3U8
     for attempt in range(3):
         try:
-            resp = requests.get(f"{CF_API_BASE}/iptv", timeout=15)
+            resp = requests.get(f"{CF_API_BASE}/local/m3u8", timeout=15)
             if resp.status_code == 200:
                 m3u8_content = resp.text
                 print(f"  ✅ M3U8 获取成功 ({len(m3u8_content)} 字节)")
@@ -44,7 +44,7 @@ def main():
     # 尝试获取 TXT
     for attempt in range(3):
         try:
-            resp = requests.get(f"{CF_API_BASE}/txt", timeout=15)
+            resp = requests.get(f"{CF_API_BASE}/local/txt", timeout=15)
             if resp.status_code == 200:
                 txt_content = resp.text
                 print(f"  ✅ TXT 获取成功 ({len(txt_content)} 字节)")
