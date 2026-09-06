@@ -653,20 +653,27 @@ def api_update():
     """手动触发更新"""
     try:
         # 导入并执行上传脚本
+        # 修复：原 timeout=60 太短，upload_and_deploy.py 远程测速一轮 100+ 源
+        # 实测耗时 ≥ 2 分钟，必然 TimeoutExpired。这里放宽到 600s（10 分钟）。
         import subprocess
         result = subprocess.run(
             ["python3", "/app/upload_and_deploy.py"],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=600
         )
-        
+
         if result.returncode == 0:
             return jsonify({"success": True, "message": "更新完成"})
         else:
             return jsonify({"success": False, "error": result.stderr})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=9998, debug=False)
+
 
 
 if __name__ == '__main__':
