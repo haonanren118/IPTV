@@ -18,7 +18,7 @@ UPLOAD_URL = os.environ.get("UPLOAD_URL", "https://iptv-bfo.pages.dev/api/upload
 ZB_FILE = os.environ.get("ZB_FILE", "/app/ZB.txt")
 EPG_URL = os.environ.get("EPG_URL", "https://epg.112114.xyz/pp.xml")
 LOGO_BASE_URL = "https://ghfast.top/https://raw.githubusercontent.com/Jarrey/iptv_logo/main/tv/"
-UPLOAD_TOKEN = os.environ.get("CF_KV_TOKEN", "cf-iptv-2025-x7m9k2p5q8r3t6v1") or os.environ.get("API_KEY", "cf-iptv-2025-x7m9k2p5q8r3t6v1")
+UPLOAD_TOKEN = os.environ.get("CF_KV_TOKEN", "iptv-default-key-2024") or os.environ.get("API_KEY", "iptv-default-key-2024")
 
 # 远程源配置
 API_URL = "https://iptvs.pes.im"
@@ -273,12 +273,16 @@ def fetch_channels_for_source(source):
 
 def clean_channel_name(name):
     """清洗和标准化频道名称"""
+    # 修复：去掉行首装饰符号（♢★*☆●▶♦等），让 "♢CCTV3综艺" / "*CCTV3" / "CCTV3" 合并成同一个频道
+    # 否则同名频道被前缀分割成多个假频道，TVBox "线路选择" 看不到其他源
+    name = re.sub(r'^[\s*♢★☆●▶♦▷○•·\-]+', '', name)
     name = name.replace("cctv", "CCTV").replace("中央", "CCTV").replace("央视", "CCTV")
     for rep in ["高清", "超高", "HD", "标清", "频道", "-", " ", "PLUS", "＋", "(", ")"]:
         name = name.replace(rep, "" if rep not in ["PLUS", "＋"] else "+")
     name = re.sub(r"CCTV(\d+)台", r"CCTV\1", name)
     name_map = {
-        "CCTV1综合": "CCTV1", "CCTV2财经": "CCTV2", "CCTV3综艺": "CCTV3",
+        "CCTV1综合": "CCTV1", "CCTV1综合+": "CCTV1", "CCTV1综合PLUS": "CCTV1",
+        "CCTV2财经": "CCTV2", "CCTV3综艺": "CCTV3",
         "CCTV4国际": "CCTV4", "CCTV4中文国际": "CCTV4", "CCTV5体育": "CCTV5",
         "CCTV6电影": "CCTV6", "CCTV7军事": "CCTV7", "CCTV7军农": "CCTV7",
         "CCTV7农业": "CCTV7", "CCTV7国防军事": "CCTV7", "CCTV8电视剧": "CCTV8",
@@ -287,8 +291,12 @@ def clean_channel_name(name):
         "CCTV新闻": "CCTV13", "CCTV14少儿": "CCTV14", "CCTV15音乐": "CCTV15",
         "CCTV16奥林匹克": "CCTV16", "CCTV17农业农村": "CCTV17", "CCTV17农业": "CCTV17",
         "CCTV5+体育赛视": "CCTV5+", "CCTV5+体育赛事": "CCTV5+", "CCTV5+体育": "CCTV5+",
+        "CCTV5+": "CCTV5+",  # 保留原名占位，确保稳定
     }
-    return name_map.get(name, name)
+    result = name_map.get(name, name)
+    # 修复：去掉尾部/头部的孤立 +（如 "CCTV1综合+" 字典漏匹配时兜底）
+    result = re.sub(r'^[+]+|[+]+$', '', result)
+    return result
 
 
 # ==================== 分组 & 排序 & 生成（本地/远程共用） ====================
@@ -447,8 +455,9 @@ def fetch_remote_sources():
 
     log(f"测速完成: {valid_hosts}/{total_hosts} 个有效源")
 
-    # 筛选速度 > 1.5 MB/s 的源
-    valid_results = [r for r in results_with_speed if r['speed'] > 1.5]
+    # 筛选速度 > 0.3 MB/s 的源（修复：从 1.5 降到 0.3，让更多源通过测速进入 final_sources，
+    # 否则选出来的 5 个源里很多频道只被 1-2 个源覆盖，TVBox "线路选择"看不到完整列表）
+    valid_results = [r for r in results_with_speed if r['speed'] > 0.3]
     valid_results.sort(key=lambda x: x['speed'], reverse=True)
 
     # 确保每种类型至少选一个
@@ -512,18 +521,22 @@ def fetch_remote_sources():
 
     log(f"远程源共抓取到 {len(all_entries)} 条频道记录")
 
-    # 按频道名分组（同名频道保留多个源）
+    # 按频道名分组（同名频道保留多个源，URL 去重避免重复）
+    # 修复：之前没有 URL 去重，导致两个 txiptv 源用同一 URL 模板时产生重复记录
     grouped = {}
     for entry in all_entries:
         name = entry['name']
+        url = entry['url']
         if name not in grouped:
             grouped[name] = []
-        grouped[name].append(entry)
+        # 同频道同 URL 只保留一次（保留先到的，即速度更快的）
+        if not any(e['url'] == url for e in grouped[name]):
+            grouped[name].append(entry)
 
     # 排序频道名
     unique_names = sorted(grouped.keys(), key=channel_sort_key)
 
-    # 生成 M3U8
+    # 生成 M3U8（同名频道多源全输出，TVBox 会识别为"备选线路"）
     update_time = time.strftime("%Y/%m/%d %H:%M:%S")
     m3u8_lines = [f'#EXTM3U x-tvg-url="{EPG_URL}"', f"#EXT-X-UPDATED: {update_time}"]
     for name in unique_names:
@@ -531,13 +544,17 @@ def fetch_remote_sources():
         for entry in entries_list:
             m3u8_lines.append(entry['content'])
 
-    # 生成 TXT（同一频道多个源都输出）
+    # 生成 TXT（同名频道只输出最快的一个源）
+    # 修复：之前同名频道输出 4 行，TVBox 把它们当成 4 个独立频道
+    # 按下个频道会在 CCTV1 的 4 行里反复跳，体验糟糕
+    # 现在 TXT 只保留速度最高的源，TVBox 列表里 CCTV1 只有 1 行
+    # M3U8 仍保留全部多源，TVBox 长按频道时可看到 5 个备选线路
     txt_lines = []
     for name in unique_names:
         entries_list = sorted(grouped[name], key=lambda x: x.get('index', 999))
         group = entries_list[0]['group']
-        for entry in entries_list:
-            txt_lines.append(f"{name},{entry['url']},{group}")
+        best_entry = entries_list[0]  # 速度最高的源
+        txt_lines.append(f"{name},{best_entry['url']},{group}")
 
     m3u8_content = "\n".join(m3u8_lines)
     txt_content = "\n".join(txt_lines)
