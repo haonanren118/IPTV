@@ -8,9 +8,15 @@ services:
       - "9998:9998"
     environment:
       - TZ=Asia/Shanghai
-      - CF_KV_TOKEN=iptv-default-key-2024
-      - CF_UPLOAD_URL=https://iptv-bfo.pages.dev/api/upload
+      # 修复：原 CF_KV_TOKEN 与脚本读 CF_KV_TOKEN 一致；URL 变量统一用 UPLOAD_URL（脚本读的就是它）
+      # 如果你想自定义 API 地址，改这个 UPLOAD_URL 即可被 upload_and_deploy.py 读到
+      - CF_KV_TOKEN=cf-iptv-2025-x7m9k2p5q8r3t6v1
+      - UPLOAD_URL=https://iptv-bfo.pages.dev/api/upload
+      # 可选：调整启动延迟与循环间隔（秒）。不设置则默认 30s 启动延迟 + 21600s(6h) 循环
+      # - STARTUP_DELAY=30
+      # - UPLOAD_INTERVAL=21600
     volumes:
       - ./ZB.txt:/app/ZB.txt:ro
       - ./logs:/app/logs
       - ./custom_sources.json:/app/custom_sources.json:ro
+
